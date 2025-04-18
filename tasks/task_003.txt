@@ -1,0 +1,76 @@
+# Task ID: 3
+# Title: Test Sesame TTS API endpoints
+# Status: pending
+# Dependencies: 2
+# Priority: high
+# Description: Validate the functionality of all required Sesame TTS API endpoints to ensure they're working correctly.
+# Details:
+1. Test speech generation with `POST /v1/audio/speech`
+2. Test voice listing with `GET /v1/audio/voices`
+3. Test available models with `GET /v1/audio/models`
+4. Document API response formats and error codes
+5. Test different voice options (alloy, echo, fable, onyx, nova, shimmer)
+6. Test different audio formats and quality settings
+7. Measure response times for various text lengths
+
+# Test Strategy:
+Create a test script that calls each API endpoint and validates the responses. Test with various parameters and edge cases. Verify audio output quality and format.
+
+# Subtasks:
+## 1. Implement basic API endpoint tests for Sesame TTS [in-progress]
+### Dependencies: None
+### Description: Create the foundation for testing Sesame TTS API endpoints by implementing basic tests for the three main endpoints: speech generation, voice listing, and model listing.
+### Details:
+1. Set up a test framework with appropriate HTTP client (e.g., axios, fetch)
+2. Create test functions for each endpoint:
+   - Test `POST /v1/audio/speech` with minimal parameters
+   - Test `GET /v1/audio/voices` and verify response structure
+   - Test `GET /v1/audio/models` and verify response structure
+3. Implement basic validation for each response:
+   - Verify HTTP status codes (200 OK)
+   - Validate response structure matches expected format
+   - Ensure required fields are present
+4. Create helper functions for making API calls and validating responses
+5. Document the basic response formats for each endpoint
+6. Testing approach: Run each test independently and verify successful responses
+
+## 2. Test voice options and audio format variations [pending]
+### Dependencies: 3.1
+### Description: Expand the API tests to cover different voice options and audio format settings to ensure the API handles various configurations correctly.
+### Details:
+1. Extend the speech generation test to include all voice options:
+   - Test each voice (alloy, echo, fable, onyx, nova, shimmer)
+   - Verify each voice produces a unique audio output
+2. Test different audio format settings:
+   - Test mp3, wav, ogg, flac formats (if supported)
+   - Test different quality settings (low, medium, high)
+   - Validate correct content-type headers in responses
+3. Create parameterized tests that combine different voices and formats
+4. Implement validation to verify audio files are properly generated:
+   - Check file size is reasonable
+   - Verify audio file can be decoded
+5. Document the behavior of each voice option and format combination
+6. Testing approach: Create a test matrix that covers all combinations and verify each produces valid audio output
+
+## 3. Implement performance and error handling tests [pending]
+### Dependencies: 3.1, 3.2
+### Description: Complete the test suite by adding performance measurements and error handling tests to ensure the API functions correctly under various conditions.
+### Details:
+1. Implement response time measurements:
+   - Test with various text lengths (short, medium, long)
+   - Record and analyze response times
+   - Set reasonable thresholds for performance expectations
+2. Implement comprehensive error handling tests:
+   - Test with invalid API keys
+   - Test with malformed requests
+   - Test with unsupported voice options or formats
+   - Test with excessively long text
+   - Test rate limiting behavior
+3. Document all error codes and their meanings
+4. Create a summary report template that includes:
+   - Success rates for different request types
+   - Average response times
+   - Identified limitations or issues
+5. Implement test for concurrent requests to assess API stability
+6. Testing approach: Run error tests in isolation to prevent false positives, and run performance tests multiple times to get reliable averages
+

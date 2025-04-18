@@ -1,0 +1,61 @@
+# Task ID: 4
+# Title: Configure VoiceInk on macOS
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Install and configure VoiceInk on the macOS client with appropriate trigger word and AI provider settings.
+# Details:
+1. Install VoiceInk on macOS 14+
+2. Configure trigger word detection for 'Gemini'
+3. Set up Gemini API integration with appropriate API keys
+4. Configure clipboard access for response capture
+5. Test basic transcription functionality
+6. Configure keyboard shortcut (Ctrl+Q) for manual activation
+7. Test AI response generation through VoiceInk
+
+# Test Strategy:
+Test voice recognition accuracy with various phrases. Verify trigger word detection works consistently. Test clipboard functionality and ensure Gemini API responses are captured correctly.
+
+# Subtasks:
+## 1. Install VoiceInk and configure system permissions [done]
+### Dependencies: None
+### Description: Download and install VoiceInk on macOS 14+ and set up necessary system permissions for microphone and clipboard access.
+### Details:
+1. Download the latest version of VoiceInk from the official website or App Store.
+2. Run the installer and follow the installation wizard.
+3. Launch VoiceInk for the first time.
+4. When prompted, grant microphone permissions in System Preferences > Security & Privacy > Microphone.
+5. Grant clipboard access permissions in System Preferences > Security & Privacy > Privacy > Clipboard.
+6. Verify VoiceInk appears in the menu bar.
+7. Test that the application launches properly without errors.
+8. Testing approach: Confirm VoiceInk is properly installed by checking that it appears in Applications folder and launches successfully with all permissions granted.
+
+## 2. Configure trigger word and keyboard shortcut [done]
+### Dependencies: 4.1
+### Description: Set up 'Gemini' as the trigger word for voice activation and configure Ctrl+Q as the manual activation shortcut.
+### Details:
+1. Open VoiceInk preferences from the menu bar icon.
+2. Navigate to the 'Activation' or 'Trigger' settings section.
+3. Set the trigger word to 'Gemini' in the voice activation settings.
+4. Navigate to the keyboard shortcuts section.
+5. Configure Ctrl+Q as the manual activation shortcut.
+6. Save the settings.
+7. Test the trigger word by saying 'Gemini' followed by a simple command.
+8. Test the keyboard shortcut by pressing Ctrl+Q.
+9. Testing approach: Verify both activation methods work by checking that the VoiceInk listening indicator appears when using either method.
+
+## 3. Set up Gemini API integration and test functionality [done]
+### Dependencies: 4.1, 4.2
+### Description: Configure the Gemini API integration with appropriate API keys and test the complete functionality of VoiceInk.
+### Details:
+1. Open VoiceInk preferences from the menu bar icon.
+2. Navigate to the 'AI Providers' or 'Integrations' section.
+3. Select Gemini as the AI provider.
+4. Enter your Gemini API key in the designated field (obtain this from Google AI Studio if not already available).
+5. Configure any additional Gemini-specific settings (model selection, response parameters).
+6. Save the settings.
+7. Test basic transcription by speaking a simple phrase after triggering VoiceInk.
+8. Test AI response generation by asking a question that requires Gemini to generate a response.
+9. Verify the response is properly copied to clipboard.
+10. Testing approach: Create a comprehensive test script with various types of queries (factual questions, creative requests, etc.) to ensure proper integration with Gemini API and clipboard functionality.
+

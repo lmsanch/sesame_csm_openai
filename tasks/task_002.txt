@@ -1,0 +1,56 @@
+# Task ID: 2
+# Title: Deploy Sesame TTS container on Ubuntu
+# Status: done
+# Dependencies: 1
+# Priority: high
+# Description: Set up and configure the Sesame TTS Docker container with proper GPU passthrough and environment variables.
+# Details:
+1. Create .env file with Hugging Face token
+2. Create docker-compose.yml file as specified in installation instructions
+3. Configure environment variables for GPU usage (CSM_DEVICE_MAP=auto)
+4. Set up volume mounts for data persistence
+5. Start the container with `docker-compose up -d`
+6. Verify container is running with `docker ps | grep sesame-tts`
+7. Create data directory for voice profiles and other persistent data
+
+# Test Strategy:
+Test basic TTS functionality with curl commands to the API endpoint. Verify the container logs for any errors. Check that the service is accessible on port 8000.
+
+# Subtasks:
+## 1. Create environment configuration files for Sesame TTS [done]
+### Dependencies: None
+### Description: Set up the necessary configuration files including .env with Hugging Face token and docker-compose.yml for the Sesame TTS container.
+### Details:
+Implementation steps:
+1. Create a dedicated directory for Sesame TTS deployment
+2. Create a .env file with the Hugging Face token (HUGGING_FACE_HUB_TOKEN=your_token_here)
+3. Create the docker-compose.yml file according to the installation instructions
+4. Configure CSM_DEVICE_MAP=auto in the environment section of docker-compose.yml
+5. Define volume mounts in docker-compose.yml for data persistence
+6. Test by validating the docker-compose.yml file syntax with 'docker-compose config'
+
+## 2. Set up data persistence directory structure [done]
+### Dependencies: 2.1
+### Description: Create and configure the necessary directory structure for Sesame TTS data persistence including voice profiles.
+### Details:
+Implementation steps:
+1. Create a data directory for Sesame TTS (e.g., ./data)
+2. Set up subdirectories for voice profiles (./data/voices)
+3. Set up any other required subdirectories based on documentation
+4. Ensure proper permissions on directories (chmod 755)
+5. Verify the directories are correctly referenced in the volume mounts section of docker-compose.yml
+6. Test by checking directory permissions and structure matches requirements
+
+## 3. Deploy and verify Sesame TTS container [done]
+### Dependencies: 2.1, 2.2
+### Description: Launch the Sesame TTS container with proper GPU passthrough and verify it's running correctly.
+### Details:
+Implementation steps:
+1. Pull the Sesame TTS image with 'docker-compose pull'
+2. Start the container with 'docker-compose up -d'
+3. Verify the container is running with 'docker ps | grep sesame-tts'
+4. Check container logs for any errors with 'docker logs <container_id>'
+5. Verify GPU passthrough is working by checking nvidia-smi output inside container
+6. Test the TTS functionality by making a simple API request to the container
+7. Document the deployment process and any troubleshooting steps for future reference
+

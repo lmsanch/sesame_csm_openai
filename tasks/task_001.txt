@@ -1,0 +1,85 @@
+# Task ID: 1
+# Title: Set up Docker environment on Ubuntu server
+# Status: done
+# Dependencies: None
+# Priority: high
+# Description: Verify Docker environment, install NVIDIA Container Toolkit, and ensure GPU access is working properly for Sesame TTS deployment.
+# Details:
+1. Check for port conflicts on 8000 using `sudo lsof -i :8000`
+2. Install Docker and Docker Compose if not already installed
+3. Install NVIDIA Container Toolkit following the provided instructions
+4. Verify GPU access with test container: `docker run --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi`
+5. Create project directory structure for voice assistant system
+6. Ensure CUDA 11.7+ is properly installed and configured
+
+# Test Strategy:
+Run the test NVIDIA container to verify GPU access. Check Docker version and NVIDIA Container Toolkit installation with appropriate commands. Verify port availability for the Sesame TTS service.
+
+# Subtasks:
+## 1. Install and verify Docker and Docker Compose [done]
+### Dependencies: None
+### Description: Check for port conflicts, install Docker and Docker Compose if not already installed, and verify the installation.
+### Details:
+1. Check for port conflicts on port 8000 using `sudo lsof -i :8000`
+2. If port 8000 is in use, identify the process and decide whether to stop it or use a different port for the deployment
+3. Check if Docker is installed using `docker --version`
+4. If not installed, add Docker's official GPG key: `curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg`
+5. Add Docker repository: `echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`
+6. Update package index: `sudo apt update`
+7. Install Docker: `sudo apt install docker-ce docker-ce-cli containerd.io`
+8. Add current user to docker group: `sudo usermod -aG docker $USER`
+9. Check if Docker Compose is installed using `docker-compose --version`
+10. If not installed, install Docker Compose: `sudo apt install docker-compose-plugin`
+11. Verify Docker installation by running: `docker run hello-world`
+12. Create project directory structure for voice assistant system: `mkdir -p sesame-tts/{config,data,logs}`
+13. Test by running a simple container: `docker run -d -p 80:80 nginx` and verify with `curl localhost:80`
+
+## 2. Install and configure NVIDIA Container Toolkit [done]
+### Dependencies: 1.1
+### Description: Install NVIDIA Container Toolkit and ensure the system is properly configured to allow Docker containers to access the GPU.
+### Details:
+1. Verify CUDA is installed: `nvidia-smi` (should show CUDA version 11.7+)
+2. If CUDA is not installed or version is too old, install/upgrade using NVIDIA's official instructions
+3. Add the NVIDIA Container Toolkit repository: `curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list`
+4. Update package index: `sudo apt update`
+5. Install NVIDIA Container Toolkit: `sudo apt install -y nvidia-container-toolkit`
+6. Configure Docker to use NVIDIA runtime: `sudo nvidia-ctk runtime configure --runtime=docker`
+7. Restart Docker daemon: `sudo systemctl restart docker`
+8. Verify Docker can see NVIDIA runtime: `docker info | grep -i runtime`
+9. Create a test script to ensure CUDA libraries are correctly linked: `echo "import torch; print(torch.cuda.is_available()); print(torch.cuda.device_count()); print(torch.version.cuda)" > test_cuda.py`
+10. Run the test script locally to confirm CUDA setup is correct: `python3 test_cuda.py`
+
+## 3. Verify GPU access in Docker containers [done]
+### Dependencies: 1.1, 1.2
+### Description: Run test containers to verify GPU access is working properly for Docker containers and prepare for Sesame TTS deployment.
+### Details:
+1. Run a basic NVIDIA test container: `docker run --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi`
+2. Verify the output shows the GPU information and CUDA version
+3. Test GPU compute capabilities with a more complex container: `docker run --gpus all -it --rm tensorflow/tensorflow:latest-gpu python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"`
+4. Create a Docker Compose file for Sesame TTS in the project directory: `nano sesame-tts/docker-compose.yml` with appropriate configuration including GPU access
+5. Add the following content to docker-compose.yml:
+```yaml
+version: '3'
+services:
+  sesame-tts:
+    image: sesame-tts:latest
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+      - ./logs:/app/logs
+```
+6. Create a test Dockerfile to verify the deployment setup: `nano sesame-tts/Dockerfile.test`
+7. Add content to test Dockerfile that includes PyTorch with GPU support
+8. Build and run the test container: `docker build -t sesame-tts-test -f sesame-tts/Dockerfile.test sesame-tts/`
+9. Run the test container: `docker run --gpus all -p 8000:8000 sesame-tts-test`
+10. Document any GPU-specific parameters or environment variables needed for the Sesame TTS deployment
+

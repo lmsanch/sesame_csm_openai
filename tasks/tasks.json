@@ -1,0 +1,266 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Set up Docker environment on Ubuntu server",
+      "description": "Verify Docker environment, install NVIDIA Container Toolkit, and ensure GPU access is working properly for Sesame TTS deployment.",
+      "status": "done",
+      "dependencies": [],
+      "priority": "high",
+      "details": "1. Check for port conflicts on 8000 using `sudo lsof -i :8000`\n2. Install Docker and Docker Compose if not already installed\n3. Install NVIDIA Container Toolkit following the provided instructions\n4. Verify GPU access with test container: `docker run --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi`\n5. Create project directory structure for voice assistant system\n6. Ensure CUDA 11.7+ is properly installed and configured",
+      "testStrategy": "Run the test NVIDIA container to verify GPU access. Check Docker version and NVIDIA Container Toolkit installation with appropriate commands. Verify port availability for the Sesame TTS service.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Install and verify Docker and Docker Compose",
+          "description": "Check for port conflicts, install Docker and Docker Compose if not already installed, and verify the installation.",
+          "dependencies": [],
+          "details": "1. Check for port conflicts on port 8000 using `sudo lsof -i :8000`\n2. If port 8000 is in use, identify the process and decide whether to stop it or use a different port for the deployment\n3. Check if Docker is installed using `docker --version`\n4. If not installed, add Docker's official GPG key: `curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg`\n5. Add Docker repository: `echo \"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`\n6. Update package index: `sudo apt update`\n7. Install Docker: `sudo apt install docker-ce docker-ce-cli containerd.io`\n8. Add current user to docker group: `sudo usermod -aG docker $USER`\n9. Check if Docker Compose is installed using `docker-compose --version`\n10. If not installed, install Docker Compose: `sudo apt install docker-compose-plugin`\n11. Verify Docker installation by running: `docker run hello-world`\n12. Create project directory structure for voice assistant system: `mkdir -p sesame-tts/{config,data,logs}`\n13. Test by running a simple container: `docker run -d -p 80:80 nginx` and verify with `curl localhost:80`",
+          "status": "done",
+          "parentTaskId": 1
+        },
+        {
+          "id": 2,
+          "title": "Install and configure NVIDIA Container Toolkit",
+          "description": "Install NVIDIA Container Toolkit and ensure the system is properly configured to allow Docker containers to access the GPU.",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Verify CUDA is installed: `nvidia-smi` (should show CUDA version 11.7+)\n2. If CUDA is not installed or version is too old, install/upgrade using NVIDIA's official instructions\n3. Add the NVIDIA Container Toolkit repository: `curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list`\n4. Update package index: `sudo apt update`\n5. Install NVIDIA Container Toolkit: `sudo apt install -y nvidia-container-toolkit`\n6. Configure Docker to use NVIDIA runtime: `sudo nvidia-ctk runtime configure --runtime=docker`\n7. Restart Docker daemon: `sudo systemctl restart docker`\n8. Verify Docker can see NVIDIA runtime: `docker info | grep -i runtime`\n9. Create a test script to ensure CUDA libraries are correctly linked: `echo \"import torch; print(torch.cuda.is_available()); print(torch.cuda.device_count()); print(torch.version.cuda)\" > test_cuda.py`\n10. Run the test script locally to confirm CUDA setup is correct: `python3 test_cuda.py`",
+          "status": "done",
+          "parentTaskId": 1
+        },
+        {
+          "id": 3,
+          "title": "Verify GPU access in Docker containers",
+          "description": "Run test containers to verify GPU access is working properly for Docker containers and prepare for Sesame TTS deployment.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "1. Run a basic NVIDIA test container: `docker run --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi`\n2. Verify the output shows the GPU information and CUDA version\n3. Test GPU compute capabilities with a more complex container: `docker run --gpus all -it --rm tensorflow/tensorflow:latest-gpu python -c \"import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))\"`\n4. Create a Docker Compose file for Sesame TTS in the project directory: `nano sesame-tts/docker-compose.yml` with appropriate configuration including GPU access\n5. Add the following content to docker-compose.yml:\n```yaml\nversion: '3'\nservices:\n  sesame-tts:\n    image: sesame-tts:latest\n    ports:\n      - \"8000:8000\"\n    deploy:\n      resources:\n        reservations:\n          devices:\n            - driver: nvidia\n              count: 1\n              capabilities: [gpu]\n    volumes:\n      - ./config:/app/config\n      - ./data:/app/data\n      - ./logs:/app/logs\n```\n6. Create a test Dockerfile to verify the deployment setup: `nano sesame-tts/Dockerfile.test`\n7. Add content to test Dockerfile that includes PyTorch with GPU support\n8. Build and run the test container: `docker build -t sesame-tts-test -f sesame-tts/Dockerfile.test sesame-tts/`\n9. Run the test container: `docker run --gpus all -p 8000:8000 sesame-tts-test`\n10. Document any GPU-specific parameters or environment variables needed for the Sesame TTS deployment",
+          "status": "done",
+          "parentTaskId": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Deploy Sesame TTS container on Ubuntu",
+      "description": "Set up and configure the Sesame TTS Docker container with proper GPU passthrough and environment variables.",
+      "status": "done",
+      "dependencies": [
+        1
+      ],
+      "priority": "high",
+      "details": "1. Create .env file with Hugging Face token\n2. Create docker-compose.yml file as specified in installation instructions\n3. Configure environment variables for GPU usage (CSM_DEVICE_MAP=auto)\n4. Set up volume mounts for data persistence\n5. Start the container with `docker-compose up -d`\n6. Verify container is running with `docker ps | grep sesame-tts`\n7. Create data directory for voice profiles and other persistent data",
+      "testStrategy": "Test basic TTS functionality with curl commands to the API endpoint. Verify the container logs for any errors. Check that the service is accessible on port 8000.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Create environment configuration files for Sesame TTS",
+          "description": "Set up the necessary configuration files including .env with Hugging Face token and docker-compose.yml for the Sesame TTS container.",
+          "dependencies": [],
+          "details": "Implementation steps:\n1. Create a dedicated directory for Sesame TTS deployment\n2. Create a .env file with the Hugging Face token (HUGGING_FACE_HUB_TOKEN=your_token_here)\n3. Create the docker-compose.yml file according to the installation instructions\n4. Configure CSM_DEVICE_MAP=auto in the environment section of docker-compose.yml\n5. Define volume mounts in docker-compose.yml for data persistence\n6. Test by validating the docker-compose.yml file syntax with 'docker-compose config'",
+          "status": "done",
+          "parentTaskId": 2
+        },
+        {
+          "id": 2,
+          "title": "Set up data persistence directory structure",
+          "description": "Create and configure the necessary directory structure for Sesame TTS data persistence including voice profiles.",
+          "dependencies": [
+            1
+          ],
+          "details": "Implementation steps:\n1. Create a data directory for Sesame TTS (e.g., ./data)\n2. Set up subdirectories for voice profiles (./data/voices)\n3. Set up any other required subdirectories based on documentation\n4. Ensure proper permissions on directories (chmod 755)\n5. Verify the directories are correctly referenced in the volume mounts section of docker-compose.yml\n6. Test by checking directory permissions and structure matches requirements",
+          "status": "done",
+          "parentTaskId": 2
+        },
+        {
+          "id": 3,
+          "title": "Deploy and verify Sesame TTS container",
+          "description": "Launch the Sesame TTS container with proper GPU passthrough and verify it's running correctly.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "Implementation steps:\n1. Pull the Sesame TTS image with 'docker-compose pull'\n2. Start the container with 'docker-compose up -d'\n3. Verify the container is running with 'docker ps | grep sesame-tts'\n4. Check container logs for any errors with 'docker logs <container_id>'\n5. Verify GPU passthrough is working by checking nvidia-smi output inside container\n6. Test the TTS functionality by making a simple API request to the container\n7. Document the deployment process and any troubleshooting steps for future reference",
+          "status": "done",
+          "parentTaskId": 2
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Test Sesame TTS API endpoints",
+      "description": "Validate the functionality of all required Sesame TTS API endpoints to ensure they're working correctly.",
+      "status": "pending",
+      "dependencies": [
+        2
+      ],
+      "priority": "high",
+      "details": "1. Test speech generation with `POST /v1/audio/speech`\n2. Test voice listing with `GET /v1/audio/voices`\n3. Test available models with `GET /v1/audio/models`\n4. Document API response formats and error codes\n5. Test different voice options (alloy, echo, fable, onyx, nova, shimmer)\n6. Test different audio formats and quality settings\n7. Measure response times for various text lengths",
+      "testStrategy": "Create a test script that calls each API endpoint and validates the responses. Test with various parameters and edge cases. Verify audio output quality and format.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Implement basic API endpoint tests for Sesame TTS",
+          "description": "Create the foundation for testing Sesame TTS API endpoints by implementing basic tests for the three main endpoints: speech generation, voice listing, and model listing.",
+          "dependencies": [],
+          "details": "1. Set up a test framework with appropriate HTTP client (e.g., axios, fetch)\n2. Create test functions for each endpoint:\n   - Test `POST /v1/audio/speech` with minimal parameters\n   - Test `GET /v1/audio/voices` and verify response structure\n   - Test `GET /v1/audio/models` and verify response structure\n3. Implement basic validation for each response:\n   - Verify HTTP status codes (200 OK)\n   - Validate response structure matches expected format\n   - Ensure required fields are present\n4. Create helper functions for making API calls and validating responses\n5. Document the basic response formats for each endpoint\n6. Testing approach: Run each test independently and verify successful responses",
+          "status": "in-progress",
+          "parentTaskId": 3
+        },
+        {
+          "id": 2,
+          "title": "Test voice options and audio format variations",
+          "description": "Expand the API tests to cover different voice options and audio format settings to ensure the API handles various configurations correctly.",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Extend the speech generation test to include all voice options:\n   - Test each voice (alloy, echo, fable, onyx, nova, shimmer)\n   - Verify each voice produces a unique audio output\n2. Test different audio format settings:\n   - Test mp3, wav, ogg, flac formats (if supported)\n   - Test different quality settings (low, medium, high)\n   - Validate correct content-type headers in responses\n3. Create parameterized tests that combine different voices and formats\n4. Implement validation to verify audio files are properly generated:\n   - Check file size is reasonable\n   - Verify audio file can be decoded\n5. Document the behavior of each voice option and format combination\n6. Testing approach: Create a test matrix that covers all combinations and verify each produces valid audio output",
+          "status": "pending",
+          "parentTaskId": 3
+        },
+        {
+          "id": 3,
+          "title": "Implement performance and error handling tests",
+          "description": "Complete the test suite by adding performance measurements and error handling tests to ensure the API functions correctly under various conditions.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "1. Implement response time measurements:\n   - Test with various text lengths (short, medium, long)\n   - Record and analyze response times\n   - Set reasonable thresholds for performance expectations\n2. Implement comprehensive error handling tests:\n   - Test with invalid API keys\n   - Test with malformed requests\n   - Test with unsupported voice options or formats\n   - Test with excessively long text\n   - Test rate limiting behavior\n3. Document all error codes and their meanings\n4. Create a summary report template that includes:\n   - Success rates for different request types\n   - Average response times\n   - Identified limitations or issues\n5. Implement test for concurrent requests to assess API stability\n6. Testing approach: Run error tests in isolation to prevent false positives, and run performance tests multiple times to get reliable averages",
+          "status": "pending",
+          "parentTaskId": 3
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Configure VoiceInk on macOS",
+      "description": "Install and configure VoiceInk on the macOS client with appropriate trigger word and AI provider settings.",
+      "status": "done",
+      "dependencies": [],
+      "priority": "high",
+      "details": "1. Install VoiceInk on macOS 14+\n2. Configure trigger word detection for 'Gemini'\n3. Set up Gemini API integration with appropriate API keys\n4. Configure clipboard access for response capture\n5. Test basic transcription functionality\n6. Configure keyboard shortcut (Ctrl+Q) for manual activation\n7. Test AI response generation through VoiceInk",
+      "testStrategy": "Test voice recognition accuracy with various phrases. Verify trigger word detection works consistently. Test clipboard functionality and ensure Gemini API responses are captured correctly.",
+      "subtasks": [
+        {
+          "id": 1,
+          "title": "Install VoiceInk and configure system permissions",
+          "description": "Download and install VoiceInk on macOS 14+ and set up necessary system permissions for microphone and clipboard access.",
+          "dependencies": [],
+          "details": "1. Download the latest version of VoiceInk from the official website or App Store.\n2. Run the installer and follow the installation wizard.\n3. Launch VoiceInk for the first time.\n4. When prompted, grant microphone permissions in System Preferences > Security & Privacy > Microphone.\n5. Grant clipboard access permissions in System Preferences > Security & Privacy > Privacy > Clipboard.\n6. Verify VoiceInk appears in the menu bar.\n7. Test that the application launches properly without errors.\n8. Testing approach: Confirm VoiceInk is properly installed by checking that it appears in Applications folder and launches successfully with all permissions granted.",
+          "status": "done",
+          "parentTaskId": 4
+        },
+        {
+          "id": 2,
+          "title": "Configure trigger word and keyboard shortcut",
+          "description": "Set up 'Gemini' as the trigger word for voice activation and configure Ctrl+Q as the manual activation shortcut.",
+          "dependencies": [
+            1
+          ],
+          "details": "1. Open VoiceInk preferences from the menu bar icon.\n2. Navigate to the 'Activation' or 'Trigger' settings section.\n3. Set the trigger word to 'Gemini' in the voice activation settings.\n4. Navigate to the keyboard shortcuts section.\n5. Configure Ctrl+Q as the manual activation shortcut.\n6. Save the settings.\n7. Test the trigger word by saying 'Gemini' followed by a simple command.\n8. Test the keyboard shortcut by pressing Ctrl+Q.\n9. Testing approach: Verify both activation methods work by checking that the VoiceInk listening indicator appears when using either method.",
+          "status": "done",
+          "parentTaskId": 4
+        },
+        {
+          "id": 3,
+          "title": "Set up Gemini API integration and test functionality",
+          "description": "Configure the Gemini API integration with appropriate API keys and test the complete functionality of VoiceInk.",
+          "dependencies": [
+            1,
+            2
+          ],
+          "details": "1. Open VoiceInk preferences from the menu bar icon.\n2. Navigate to the 'AI Providers' or 'Integrations' section.\n3. Select Gemini as the AI provider.\n4. Enter your Gemini API key in the designated field (obtain this from Google AI Studio if not already available).\n5. Configure any additional Gemini-specific settings (model selection, response parameters).\n6. Save the settings.\n7. Test basic transcription by speaking a simple phrase after triggering VoiceInk.\n8. Test AI response generation by asking a question that requires Gemini to generate a response.\n9. Verify the response is properly copied to clipboard.\n10. Testing approach: Create a comprehensive test script with various types of queries (factual questions, creative requests, etc.) to ensure proper integration with Gemini API and clipboard functionality.",
+          "status": "done",
+          "parentTaskId": 4
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Create Mac client bridge script",
+      "description": "Develop the Python script for the Mac client to monitor clipboard and communicate with the Sesame TTS server.",
+      "status": "pending",
+      "dependencies": [
+        3,
+        4
+      ],
+      "priority": "high",
+      "details": "1. Install required Python packages (requests, pyperclip, pygame)\n2. Create voice_bridge.py script as specified in installation instructions\n3. Implement clipboard monitoring logic\n4. Add trigger word detection\n5. Implement communication with Sesame TTS server\n6. Create audio playback functionality\n7. Add command-line argument parsing for configuration\n8. Make script executable with proper permissions",
+      "testStrategy": "Test the script with various clipboard inputs containing the trigger word. Verify it correctly extracts queries and sends them to the TTS server. Test audio playback functionality with different response types."
+    },
+    {
+      "id": 6,
+      "title": "Implement error handling and recovery",
+      "description": "Add robust error handling and recovery mechanisms to the communication layer between Mac client and Ubuntu server.",
+      "status": "pending",
+      "dependencies": [
+        5
+      ],
+      "priority": "medium",
+      "details": "1. Add network error detection and retry logic\n2. Implement timeout handling for API requests\n3. Create fallback mechanisms for server unavailability\n4. Add logging for error diagnosis\n5. Implement graceful degradation when components fail\n6. Add notification system for persistent errors\n7. Create recovery procedures for common failure scenarios",
+      "testStrategy": "Simulate various failure conditions (network outages, server unavailability, API errors) and verify the system handles them gracefully. Test retry logic and recovery procedures."
+    },
+    {
+      "id": 7,
+      "title": "Enhance voice selection and customization",
+      "description": "Implement voice selection mechanism and add support for voice customization features.",
+      "status": "pending",
+      "dependencies": [
+        5
+      ],
+      "priority": "medium",
+      "details": "1. Extend bridge script to support voice selection\n2. Add configuration file for voice preferences\n3. Implement voice preview functionality\n4. Create mechanism to store and retrieve voice settings\n5. Add speech parameter controls (speed, pitch)\n6. Implement basic voice cloning interface if supported by Sesame\n7. Create default voice configuration options",
+      "testStrategy": "Test voice selection with all available voices. Verify configuration persistence between restarts. Test speech parameter controls and measure their effect on output."
+    },
+    {
+      "id": 8,
+      "title": "Implement conversation management",
+      "description": "Add support for maintaining conversation context and handling multi-turn conversations.",
+      "status": "pending",
+      "dependencies": [
+        5
+      ],
+      "priority": "medium",
+      "details": "1. Create conversation history tracking mechanism\n2. Implement context handling for multi-turn conversations\n3. Add timeout handling for conversation sessions\n4. Create interruption detection and handling\n5. Optimize response formatting for speech\n6. Implement natural conversation flow improvements\n7. Add conversation reset functionality",
+      "testStrategy": "Test multi-turn conversations with context-dependent queries. Verify context is maintained appropriately. Test timeout behavior and interruption handling."
+    },
+    {
+      "id": 9,
+      "title": "Add audio feedback system",
+      "description": "Implement audible cues and feedback for different system states to improve user experience.",
+      "status": "pending",
+      "dependencies": [
+        5
+      ],
+      "priority": "low",
+      "details": "1. Create audio cues for system states (listening, processing, responding)\n2. Implement transition sounds between states\n3. Add volume control and normalization\n4. Create natural pause timing between interactions\n5. Implement interruption detection during playback\n6. Add audio indicators for errors or system issues\n7. Create mute/unmute functionality",
+      "testStrategy": "Test audio cues in different system states. Verify volume controls work correctly. Test interruption detection during audio playback. Evaluate the natural feel of the audio feedback system."
+    },
+    {
+      "id": 10,
+      "title": "Create configuration interface and documentation",
+      "description": "Develop a configuration interface for the system and complete user documentation.",
+      "status": "pending",
+      "dependencies": [
+        6,
+        7,
+        8,
+        9
+      ],
+      "priority": "low",
+      "details": "1. Create settings management for Mac client\n2. Implement configuration file for system preferences\n3. Add user preference storage mechanism\n4. Create backup and restore functionality\n5. Develop help documentation\n6. Create troubleshooting guide\n7. Write installation and setup instructions\n8. Document all configuration options and their effects",
+      "testStrategy": "Test configuration changes and verify they take effect. Validate backup and restore functionality. Have test users follow documentation to set up the system and gather feedback on clarity and completeness."
+    }
+  ],
+  "metadata": {
+    "projectName": "VoiceInk-Sesame Voice Assistant Integration",
+    "totalTasks": 10,
+    "sourceFile": "voiceink_sesame_prd_final.txt",
+    "generatedAt": "2023-06-11"
+  }
+}

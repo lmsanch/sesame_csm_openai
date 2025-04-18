@@ -1,0 +1,18 @@
+# Task ID: 5
+# Title: Create Mac client bridge script
+# Status: pending
+# Dependencies: 3, 4
+# Priority: high
+# Description: Develop the Python script for the Mac client to monitor clipboard and communicate with the Sesame TTS server.
+# Details:
+1. Install required Python packages (requests, pyperclip, pygame)
+2. Create voice_bridge.py script as specified in installation instructions
+3. Implement clipboard monitoring logic
+4. Add trigger word detection
+5. Implement communication with Sesame TTS server
+6. Create audio playback functionality
+7. Add command-line argument parsing for configuration
+8. Make script executable with proper permissions
+
+# Test Strategy:
+Test the script with various clipboard inputs containing the trigger word. Verify it correctly extracts queries and sends them to the TTS server. Test audio playback functionality with different response types.
